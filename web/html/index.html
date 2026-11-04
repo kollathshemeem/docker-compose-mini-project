@@ -1,14 +1,297 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>DevOps Mini Project</title>
-</head>
-<body>
-    <h1>Welcome to My DevOps Project!</h1>
-    <h2>Docker Compose Mini Project</h2>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose 3-Tier App</title>
 
-    <p>Web Service: Nginx</p>
-    <p>Backend Service: FastAPI</p>
-    <p>Database Service: PostgreSQL</p>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0b1328;
+            color: #e5e7eb;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dashboard {
+            width: 390px;
+            max-width: 95%;
+            padding: 28px;
+            background: #1b293d;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #06d6e8;
+            font-size: 21px;
+            margin-top: 0;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 22px;
+        }
+
+        .status {
+            background: #063528;
+            border: 1px solid #087f5b;
+            color: #10e8a3;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .form {
+            display: flex;
+            gap: 8px;
+        }
+
+        input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px;
+            background: #0b1328;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            color: white;
+        }
+
+        button {
+            background: #06b6d4;
+            color: #07111f;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #22d3ee;
+        }
+
+        .items-title {
+            margin-top: 24px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .items {
+            background: #0b1328;
+            padding: 8px;
+            border: 1px solid #334155;
+            border-radius: 5px;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1b293d;
+            padding: 10px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .item:last-child {
+            margin-bottom: 0;
+        }
+
+        .item small {
+            color: #64748b;
+        }
+
+        .delete {
+            background: #dc2626;
+            color: white;
+            padding: 5px 8px;
+            margin-left: 8px;
+            font-size: 11px;
+        }
+
+        #message {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #fca5a5;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <h1>Docker Compose 3-Tier App</h1>
+
+    <div class="subtitle">
+        Frontend (Nginx) → API (FastAPI) → Database (PostgreSQL)
+    </div>
+
+    <div class="status" id="status">
+        Checking API and database...
+    </div>
+
+    <label>ADD DATABASE RECORD</label>
+
+    <form class="form" id="itemForm">
+        <input
+            type="text"
+            id="itemName"
+            placeholder="Enter item name..."
+            required
+        >
+        <button type="submit">Add</button>
+    </form>
+
+    <div id="message"></div>
+
+    <div class="items-title">SAVED ITEMS FROM DATABASE</div>
+
+    <div class="items" id="items">
+        Loading records...
+    </div>
+
+</div>
+
+<script>
+    const API = "http://localhost:8000";
+
+    async function checkHealth() {
+        const status = document.getElementById("status");
+
+        try {
+            const response = await fetch(`${API}/health`);
+            const data = await response.json();
+
+            if (response.ok) {
+                status.textContent =
+                    `Status: ${data.status} | DB: ${data.database}`;
+            } else {
+                status.textContent = "API or database error";
+            }
+        } catch (error) {
+            status.textContent = "API connection failed";
+        }
+    }
+
+    async function loadItems() {
+        const container = document.getElementById("items");
+
+        try {
+            const response = await fetch(`${API}/items`);
+            const items = await response.json();
+
+            container.innerHTML = "";
+
+            if (items.length === 0) {
+                container.textContent = "No records found.";
+                return;
+            }
+
+            items.forEach(item => {
+                const row = document.createElement("div");
+                row.className = "item";
+
+                const name = document.createElement("span");
+                name.textContent = item.name;
+
+                const right = document.createElement("span");
+
+                const id = document.createElement("small");
+                id.textContent = `ID: ${item.id}`;
+
+                const del = document.createElement("button");
+                del.className = "delete";
+                del.textContent = "Delete";
+                del.onclick = () => deleteItem(item.id);
+
+                right.appendChild(id);
+                right.appendChild(del);
+
+                row.appendChild(name);
+                row.appendChild(right);
+
+                container.appendChild(row);
+            });
+
+        } catch (error) {
+            container.textContent = "Unable to load records.";
+        }
+    }
+
+    document.getElementById("itemForm").addEventListener(
+        "submit",
+        async function(event) {
+            event.preventDefault();
+
+            const input = document.getElementById("itemName");
+            const message = document.getElementById("message");
+            const name = input.value.trim();
+
+            if (!name) return;
+
+            try {
+                const response = await fetch(`${API}/items`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ name: name })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to add item");
+                }
+
+                input.value = "";
+                message.textContent = "";
+                await loadItems();
+
+            } catch (error) {
+                message.textContent = "Could not save item.";
+            }
+        }
+    );
+
+    async function deleteItem(id) {
+        try {
+            const response = await fetch(`${API}/items/${id}`, {
+                method: "DELETE"
+            });
+
+            if (response.ok) {
+                await loadItems();
+            }
+        } catch (error) {
+            document.getElementById("message").textContent =
+                "Could not delete item.";
+        }
+    }
+
+    checkHealth();
+    loadItems();
+</script>
+
 </body>
 </html>
