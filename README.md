@@ -1,17 +1,23 @@
-Project name and purpose
+Docker Compose Mini Project
 
+Project Overview
 
+This project demonstrates a multi-container application using Docker Compose.
 
-Technologies: Docker, Docker Compose, Nginx, FastAPI, PostgreSQL
+It includes a web server, backend API, and PostgreSQL database.
 
+Technologies Used
 
+Docker
 
-Project architecture
+Docker Compose
 
+Nginx
 
+Python
 
-How to run the project
+FastAPI
 
+PostgreSQL
 
-
-Services and ports
+AlmaLinux 9
